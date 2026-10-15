@@ -3,12 +3,6 @@ const bookRepository = require("../repositories/book.repository");
 async function searchBooks(query) {
   const keyword = (query.q || "").trim();
 
-  if (!keyword) {
-    const error = new Error("Vui lòng nhập từ khóa tìm kiếm");
-    error.statusCode = 400;
-    throw error;
-  }
-
   const page = Math.max(parseInt(query.page, 10) || 1, 1);
   const limit = Math.min(Math.max(parseInt(query.limit, 10) || 12, 1), 50);
   const offset = (page - 1) * limit;

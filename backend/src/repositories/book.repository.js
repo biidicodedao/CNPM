@@ -14,12 +14,14 @@ async function searchBooks({
   const values = [];
   let idx = 1;
 
-  // Điều kiện từ khóa (bắt buộc, hỗ trợ tìm kiếm cả có dấu và không dấu)
-  conditions.push(
-    `(unaccent(b.book_name) ILIKE unaccent($${idx}) OR unaccent(a.author_name) ILIKE unaccent($${idx}) OR unaccent(c.category_name) ILIKE unaccent($${idx}))`,
-  );
-  values.push(`%${keyword}%`);
-  idx++;
+  // Điều kiện từ khóa (tùy chọn: hỗ trợ tìm kiếm cả có dấu và không dấu khi có keyword)
+  if (keyword && keyword.trim() !== "") {
+    conditions.push(
+      `(unaccent(b.book_name) ILIKE unaccent($${idx}) OR unaccent(a.author_name) ILIKE unaccent($${idx}) OR unaccent(c.category_name) ILIKE unaccent($${idx}))`,
+    );
+    values.push(`%${keyword.trim()}%`);
+    idx++;
+  }
 
   // Điều kiện lọc (tùy chọn)
   if (categoryId) {
@@ -43,7 +45,7 @@ async function searchBooks({
     idx++;
   }
 
-  const whereClause = conditions.join(" AND ");
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   // Whitelist cột sort — KHÔNG lấy trực tiếp từ input người dùng
   const SORT_MAP = {
@@ -60,7 +62,7 @@ async function searchBooks({
     FROM book b
     JOIN author a ON b.author_id = a.author_id
     JOIN category c ON b.category_id = c.category_id
-    WHERE ${whereClause}
+    ${whereClause}
     ORDER BY ${orderBy}
     LIMIT $${idx} OFFSET $${idx + 1}
   `;
@@ -71,7 +73,7 @@ async function searchBooks({
     FROM book b
     JOIN author a ON b.author_id = a.author_id
     JOIN category c ON b.category_id = c.category_id
-    WHERE ${whereClause}
+    ${whereClause}
   `;
 
   const [dataResult, countResult] = await Promise.all([

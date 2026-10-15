@@ -34,9 +34,9 @@ export default function SearchPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Load categories and authors on mount
+  // Load categories, authors, và toàn bộ sách khi vừa vào trang
   useEffect(() => {
-    async function loadFilterOptions() {
+    async function init() {
       try {
         const [cats, auths] = await Promise.all([
           getCategories().catch(() => []),
@@ -47,33 +47,32 @@ export default function SearchPage() {
       } catch (err) {
         console.error("Lỗi tải danh mục/tác giả:", err);
       }
+      // Tự động tải tất cả sách ngay khi mở link
+      executeSearch(1, { kw: "" });
     }
-    loadFilterOptions();
+    init();
   }, []);
 
-  // Thực hiện tìm kiếm
-  const executeSearch = async (page = 1) => {
-    const trimmed = keyword.trim();
-    if (!trimmed) {
-      setErrorMessage("Vui lòng nhập từ khóa tìm kiếm");
-      setBooks([]);
-      setTotal(0);
-      setTotalPages(0);
-      setHasSearched(true);
-      return;
-    }
-
+  // Thực hiện tìm kiếm hoặc lọc sách
+  const executeSearch = async (page = 1, overrideParams = {}) => {
     setIsLoading(true);
     setErrorMessage("");
 
+    const kw = overrideParams.kw !== undefined ? overrideParams.kw : keyword.trim();
+    const cat = overrideParams.cat !== undefined ? overrideParams.cat : selectedCategory;
+    const auth = overrideParams.auth !== undefined ? overrideParams.auth : selectedAuthor;
+    const minP = overrideParams.min !== undefined ? overrideParams.min : minPrice;
+    const maxP = overrideParams.max !== undefined ? overrideParams.max : maxPrice;
+    const sort = overrideParams.sort !== undefined ? overrideParams.sort : sortBy;
+
     try {
       const data = await searchBooks({
-        q: trimmed,
-        category: selectedCategory || undefined,
-        author: selectedAuthor || undefined,
-        minPrice: minPrice || undefined,
-        maxPrice: maxPrice || undefined,
-        sort: sortBy || undefined,
+        q: kw || undefined,
+        category: cat || undefined,
+        author: auth || undefined,
+        minPrice: minP || undefined,
+        maxPrice: maxP || undefined,
+        sort: sort || undefined,
         page,
         limit,
       });
@@ -82,7 +81,7 @@ export default function SearchPage() {
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 0);
       setCurrentPage(data.page || 1);
-      setLastSearchedKeyword(trimmed);
+      setLastSearchedKeyword(kw);
       setHasSearched(true);
     } catch (err) {
       setErrorMessage(err.message || "Đã có lỗi xảy ra");
@@ -103,6 +102,9 @@ export default function SearchPage() {
   const handleClearKeyword = () => {
     setKeyword("");
     setErrorMessage("");
+    setCurrentPage(1);
+    // Tự động cập nhật lại danh sách sách theo các bộ lọc đang chọn
+    executeSearch(1, { kw: "" });
   };
 
   const handlePageChange = (newPage) => {
@@ -117,13 +119,14 @@ export default function SearchPage() {
     setMinPrice("");
     setMaxPrice("");
     setSortBy("name_asc");
+    setCurrentPage(1);
+    // Đặt lại bộ lọc và hiển thị lại toàn bộ sách theo từ khóa hiện tại (nếu có)
+    executeSearch(1, { cat: "", auth: "", min: "", max: "", sort: "name_asc" });
   };
 
   const handleApplyFilters = () => {
-    if (keyword.trim()) {
-      setCurrentPage(1);
-      executeSearch(1);
-    }
+    setCurrentPage(1);
+    executeSearch(1);
   };
 
   return (
@@ -131,7 +134,7 @@ export default function SearchPage() {
       <header className="page-header">
         <h1 className="header-title">📚 Cửa Hàng Sách Trực Tuyến</h1>
         <p className="header-subtitle">
-          Tìm kiếm sách dễ dàng theo tên sách, tác giả hoặc thể loại
+          Tìm kiếm sách dễ dàng theo tên sách, tác giả hoặc lọc theo thể loại, khoảng giá
         </p>
       </header>
 
@@ -169,7 +172,7 @@ export default function SearchPage() {
       {errorMessage && (
         <ErrorState
           message={errorMessage}
-          onRetry={keyword.trim() ? handleSearchClick : null}
+          onRetry={handleSearchClick}
         />
       )}
 
@@ -177,22 +180,33 @@ export default function SearchPage() {
       {isLoading && (
         <div className="loading-container">
           <div className="spinner"></div>
-          <p>Đang tìm kiếm sách...</p>
+          <p>Đang tải dữ liệu sách...</p>
         </div>
       )}
 
-      {/* Kết quả tìm kiếm */}
+      {/* Kết quả hiển thị sách */}
       {!isLoading && !errorMessage && hasSearched && (
         <section className="results-section">
           {books.length > 0 ? (
             <>
               <div className="results-header">
                 <span className="results-count">
-                  Tìm thấy <strong>{total}</strong> kết quả cho từ khóa "
-                  <em>{lastSearchedKeyword}</em>"
+                  {lastSearchedKeyword ? (
+                    <>
+                      Tìm thấy <strong>{total}</strong> kết quả cho từ khóa "
+                      <em>{lastSearchedKeyword}</em>"
+                    </>
+                  ) : (
+                    <>
+                      Hiển thị <strong>{total}</strong> cuốn sách
+                      {(selectedCategory || selectedAuthor || minPrice || maxPrice)
+                        ? " theo bộ lọc"
+                        : " trong cửa hàng"}
+                    </>
+                  )}
                 </span>
                 <span className="results-page-info">
-                  Trang {currentPage} / {totalPages}
+                  Trang {currentPage} / {Math.max(totalPages, 1)}
                 </span>
               </div>
 
@@ -209,26 +223,12 @@ export default function SearchPage() {
               keyword={lastSearchedKeyword}
               onReset={() => {
                 handleResetFilters();
-                if (keyword.trim()) executeSearch(1);
+                setKeyword("");
+                executeSearch(1, { kw: "", cat: "", auth: "", min: "", max: "", sort: "name_asc" });
               }}
             />
           )}
         </section>
-      )}
-
-      {/* Banner hướng dẫn ban đầu khi chưa tìm kiếm */}
-      {!hasSearched && !isLoading && !errorMessage && (
-        <div className="initial-guide">
-          <div className="guide-card">
-            <h3>💡 Hướng dẫn tìm kiếm</h3>
-            <p>
-              Nhập từ khóa như <strong>"Lập trình"</strong>,{" "}
-              <strong>"Robert C. Martin"</strong>, hoặc{" "}
-              <strong>"Văn học"</strong> vào thanh tìm kiếm phía trên rồi bấm{" "}
-              <strong>Tìm kiếm</strong> hoặc phím <strong>Enter</strong>.
-            </p>
-          </div>
-        </div>
       )}
     </div>
   );
