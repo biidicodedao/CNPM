@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test backend/test/book.test.js",
+    "test:python": "python -m unittest tests/test_book_search.py -v",
+    "test:all": "npm test && npm run test:python"
   },
   "keywords": [],
   "author": "",
