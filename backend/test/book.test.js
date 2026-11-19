@@ -5,141 +5,219 @@ require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 const pool = require("../src/config/db");
 const bookService = require("../src/services/book.service");
-const bookRepository = require("../src/repositories/book.repository");
 
-describe("UNIT TEST SUITE: BOOK SEARCH MODULE", () => {
+describe("UNIT TEST SUITE: EXPANDED BOOK SEARCH MODULE", () => {
   before(async () => {
-    // Đảm bảo extension unaccent đã sẵn sàng
     await pool.query("CREATE EXTENSION IF NOT EXISTS unaccent;");
   });
 
   after(async () => {
-    // Đóng pool kết nối sau khi hoàn thành test
     await pool.end();
   });
 
-  // ============================================================
-  // 1. UNIT TEST: BOOK SERVICE LAYER
-  // ============================================================
-  describe("Tầng Service (book.service.js)", () => {
-    test("TC-01: Tìm kiếm sách theo từ khóa có dấu 'Lập trình'", async () => {
-      const result = await bookService.searchBooks({ q: "Lập trình" });
-      assert.ok(result);
-      assert.strictEqual(result.keyword, "Lập trình");
-      assert.ok(result.total >= 3);
-      assert.ok(Array.isArray(result.books));
-      assert.ok(result.books.length >= 3);
-
-      for (const book of result.books) {
-        const matches =
-          book.book_name.toLowerCase().includes("lập trình") ||
-          book.author_name.toLowerCase().includes("lập trình") ||
-          book.category_name.toLowerCase().includes("lập trình");
-        assert.ok(matches, `Cuốn sách ${book.book_name} phải khớp từ khóa`);
-      }
+  describe("1. Kiểm thử tìm kiếm từ khóa đa dạng", () => {
+    test("TC-01: Tìm kiếm sách CNTT 'Clean Code'", async () => {
+      const res = await bookService.searchBooks({ q: "Clean Code" });
+      assert.ok(res.total >= 1);
+      assert.ok(res.books.some((b) => b.book_name.includes("Clean Code")));
     });
 
-    test("TC-02: Tìm kiếm không phân biệt chữ hoa / thường (Case-insensitive)", async () => {
-      const resLower = await bookService.searchBooks({ q: "lập trình" });
-      const resUpper = await bookService.searchBooks({ q: "LẬP TRÌNH" });
-      assert.strictEqual(resLower.total, resUpper.total);
-      assert.strictEqual(resLower.books.length, resUpper.books.length);
+    test("TC-02: Tìm kiếm sách Văn học 'Rừng Na Uy'", async () => {
+      const res = await bookService.searchBooks({ q: "Rừng Na Uy" });
+      assert.ok(res.total >= 1);
+      assert.ok(res.books.some((b) => b.book_name.includes("Rừng Na Uy")));
     });
 
-    test("TC-03: Tìm kiếm tiếng Việt không dấu (PostgreSQL unaccent)", async () => {
-      const result = await bookService.searchBooks({ q: "lap trinh" });
-      assert.ok(result.total >= 3);
-      const names = result.books.map((b) => b.book_name);
-      assert.ok(names.some((name) => name.includes("Lập trình")));
+    test("TC-03: Tìm kiếm sách Kỹ năng sống 'Atomic Habits'", async () => {
+      const res = await bookService.searchBooks({ q: "Atomic Habits" });
+      assert.ok(res.total >= 1);
+      assert.ok(res.books.some((b) => b.book_name.includes("Atomic Habits")));
     });
 
-    test("TC-04: Hiển thị toàn bộ sách khi không có từ khóa", async () => {
-      const result = await bookService.searchBooks({});
-      assert.ok(result.total >= 8);
-      assert.ok(result.books.length > 0);
+    test("TC-04: Tìm kiếm sách Thiếu nhi 'Harry Potter'", async () => {
+      const res = await bookService.searchBooks({ q: "Harry Potter" });
+      assert.ok(res.total >= 2);
     });
 
-    test("TC-05: Tìm kiếm từ khóa không tồn tại trả về danh sách rỗng (Empty State)", async () => {
-      const result = await bookService.searchBooks({ q: "xyz123khongtontai999" });
-      assert.strictEqual(result.total, 0);
-      assert.strictEqual(result.books.length, 0);
-      assert.strictEqual(result.totalPages, 0);
+    test("TC-05: Tìm kiếm có khoảng trắng thừa '   Sapiens   '", async () => {
+      const res = await bookService.searchBooks({ q: "   Sapiens   " });
+      assert.ok(res.total >= 1);
+      assert.ok(res.books.some((b) => b.book_name.includes("Sapiens")));
     });
 
-    test("TC-06: Bảo mật chống SQL Injection (' OR '1'='1)", async () => {
-      const result = await bookService.searchBooks({ q: "' OR '1'='1" });
-      // Parameterized query sẽ coi đây là chuỗi bình thường, không leak toàn bộ DB
-      assert.strictEqual(result.total, 0);
-      assert.strictEqual(result.books.length, 0);
+    test("TC-06: Tìm kiếm từ khóa số '1984'", async () => {
+      const res = await bookService.searchBooks({ q: "1984" });
+      assert.ok(res.total >= 1);
+      assert.ok(res.books.some((b) => b.book_name.includes("1984")));
+    });
+  });
+
+  describe("2. Kiểm thử tìm kiếm không dấu (unaccent)", () => {
+    test("TC-07: 'lap trinh' -> tìm thấy sách Lập trình", async () => {
+      const res = await bookService.searchBooks({ q: "lap trinh" });
+      assert.ok(res.total >= 3);
+      assert.ok(res.books.every((b) => b.book_name.toLowerCase().includes("lập trình")));
     });
 
-    test("TC-07: Lọc theo thể loại (Category ID = 2: CNTT)", async () => {
-      const result = await bookService.searchBooks({ category: "2" });
-      assert.ok(result.total > 0);
-      for (const book of result.books) {
-        assert.strictEqual(book.category_name, "Công nghệ thông tin");
-      }
+    test("TC-08: 'mat biec' -> tìm thấy Mắt Biếc", async () => {
+      const res = await bookService.searchBooks({ q: "mat biec" });
+      assert.ok(res.total >= 1);
+      assert.ok(res.books.some((b) => b.book_name === "Mắt Biếc"));
     });
 
-    test("TC-08: Lọc theo tác giả (Author ID = 2: Robert C. Martin)", async () => {
-      const result = await bookService.searchBooks({ author: "2" });
-      assert.ok(result.total > 0);
-      for (const book of result.books) {
-        assert.strictEqual(book.author_name, "Robert C. Martin");
-      }
+    test("TC-09: 'dac nhan tam' -> tìm thấy Đắc Nhân Tâm", async () => {
+      const res = await bookService.searchBooks({ q: "dac nhan tam" });
+      assert.ok(res.total >= 1);
+      assert.ok(res.books.some((b) => b.book_name.includes("Đắc Nhân Tâm")));
     });
 
-    test("TC-09: Lọc theo khoảng giá (minPrice = 70.000, maxPrice = 130.000)", async () => {
-      const result = await bookService.searchBooks({ minPrice: "70000", maxPrice: "130000" });
-      assert.ok(result.total > 0);
-      for (const book of result.books) {
-        const price = parseFloat(book.price);
-        assert.ok(price >= 70000 && price <= 130000);
-      }
+    test("TC-10: 'nguyen nhat anh' -> tìm thấy sách của Nguyễn Nhật Ánh", async () => {
+      const res = await bookService.searchBooks({ q: "nguyen nhat anh" });
+      assert.ok(res.total >= 4);
+      assert.ok(res.books.every((b) => b.author_name === "Nguyễn Nhật Ánh"));
     });
 
-    test("TC-10: Sắp xếp theo giá tăng dần (price_asc)", async () => {
-      const result = await bookService.searchBooks({ sort: "price_asc", limit: "20" });
-      const prices = result.books.map((b) => parseFloat(b.price));
-      const sortedPrices = [...prices].sort((a, b) => a - b);
-      assert.deepStrictEqual(prices, sortedPrices);
+    test("TC-11: 'to hoai' -> tìm thấy sách của Tô Hoài", async () => {
+      const res = await bookService.searchBooks({ q: "to hoai" });
+      assert.ok(res.total >= 3);
+      assert.ok(res.books.every((b) => b.author_name === "Tô Hoài"));
+    });
+  });
+
+  describe("3. Kiểm thử chữ hoa / chữ thường", () => {
+    test("TC-12: Chữ HOA 'CLEAN CODE' và thường 'clean code'", async () => {
+      const upper = await bookService.searchBooks({ q: "CLEAN CODE" });
+      const lower = await bookService.searchBooks({ q: "clean code" });
+      assert.strictEqual(upper.total, lower.total);
     });
 
-    test("TC-11: Sắp xếp theo giá giảm dần (price_desc)", async () => {
-      const result = await bookService.searchBooks({ sort: "price_desc", limit: "20" });
-      const prices = result.books.map((b) => parseFloat(b.price));
-      const sortedPrices = [...prices].sort((a, b) => b - a);
-      assert.deepStrictEqual(prices, sortedPrices);
+    test("TC-13: Hoa thường xen kẽ 'lẬp tRìNh'", async () => {
+      const mixed = await bookService.searchBooks({ q: "lẬp tRìNh" });
+      assert.ok(mixed.total >= 3);
+    });
+  });
+
+  describe("4. Kiểm thử bộ lọc Thể loại (Category)", () => {
+    test("TC-14: Lọc thể loại Văn học (cat=1)", async () => {
+      const res = await bookService.searchBooks({ category: "1" });
+      assert.ok(res.total >= 8);
+      assert.ok(res.books.every((b) => b.category_name === "Văn học"));
     });
 
-    test("TC-12: Phân trang (Pagination) - Tính toán offset và limit", async () => {
-      const page1 = await bookService.searchBooks({ page: "1", limit: "3" });
-      const page2 = await bookService.searchBooks({ page: "2", limit: "3" });
-      assert.strictEqual(page1.page, 1);
-      assert.strictEqual(page1.limit, 3);
-      assert.strictEqual(page1.books.length, 3);
-      assert.strictEqual(page2.page, 2);
-      assert.ok(page2.books.length > 0);
-
-      const p1Ids = new Set(page1.books.map((b) => b.book_id));
-      const hasDuplicate = page2.books.some((b) => p1Ids.has(b.book_id));
-      assert.strictEqual(hasDuplicate, false, "Trang 1 và Trang 2 không được chứa bản ghi trùng nhau");
+    test("TC-15: Lọc thể loại CNTT (cat=2)", async () => {
+      const res = await bookService.searchBooks({ category: "2" });
+      assert.ok(res.total >= 7);
+      assert.ok(res.books.every((b) => b.category_name === "Công nghệ thông tin"));
     });
 
-    test("TC-13: Lấy danh sách danh mục thể loại (getCategories)", async () => {
-      const categories = await bookService.getCategories();
-      assert.ok(Array.isArray(categories));
-      assert.ok(categories.length >= 4);
-      assert.ok(categories[0].category_id);
-      assert.ok(categories[0].category_name);
+    test("TC-16: Lọc thể loại Khoa học - Lịch sử (cat=7)", async () => {
+      const res = await bookService.searchBooks({ category: "7" });
+      assert.ok(res.total >= 3);
+      assert.ok(res.books.every((b) => b.category_name === "Khoa học - Lịch sử"));
+    });
+  });
+
+  describe("5. Kiểm thử bộ lọc Tác giả (Author)", () => {
+    test("TC-17: Lọc tác giả Robert C. Martin (author=2)", async () => {
+      const res = await bookService.searchBooks({ author: "2" });
+      assert.ok(res.total >= 4);
+      assert.ok(res.books.every((b) => b.author_name === "Robert C. Martin"));
     });
 
-    test("TC-14: Lấy danh sách tác giả (getAuthors)", async () => {
+    test("TC-18: Lọc tác giả J.K. Rowling (author=15)", async () => {
+      const res = await bookService.searchBooks({ author: "15" });
+      assert.ok(res.total >= 2);
+      assert.ok(res.books.every((b) => b.author_name === "J.K. Rowling"));
+    });
+
+    test("TC-19: Lọc tác giả Yuval Noah Harari (author=8)", async () => {
+      const res = await bookService.searchBooks({ author: "8" });
+      assert.ok(res.total >= 2);
+      assert.ok(res.books.every((b) => b.author_name === "Yuval Noah Harari"));
+    });
+  });
+
+  describe("6. Kiểm thử khoảng giá (Price Range)", () => {
+    test("TC-20: Khoảng giá [40.000 - 60.000]", async () => {
+      const res = await bookService.searchBooks({ minPrice: "40000", maxPrice: "60000" });
+      assert.ok(res.total >= 1);
+      assert.ok(res.books.every((b) => parseFloat(b.price) >= 40000 && parseFloat(b.price) <= 60000));
+    });
+
+    test("TC-21: Khoảng giá [200.000 - 400.000]", async () => {
+      const res = await bookService.searchBooks({ minPrice: "200000", maxPrice: "400000" });
+      assert.ok(res.total >= 5);
+      assert.ok(res.books.every((b) => parseFloat(b.price) >= 200000 && parseFloat(b.price) <= 400000));
+    });
+
+    test("TC-22: Khoảng giá ngược (min=300k, max=50k) -> 0 kết quả", async () => {
+      const res = await bookService.searchBooks({ minPrice: "300000", maxPrice: "50000" });
+      assert.strictEqual(res.total, 0);
+    });
+  });
+
+  describe("7. Kiểm thử sắp xếp (Sorting)", () => {
+    test("TC-23: Sắp xếp giá tăng dần (price_asc)", async () => {
+      const res = await bookService.searchBooks({ sort: "price_asc", limit: "40" });
+      const prices = res.books.map((b) => parseFloat(b.price));
+      const sorted = [...prices].sort((a, b) => a - b);
+      assert.deepStrictEqual(prices, sorted);
+    });
+
+    test("TC-24: Sắp xếp giá giảm dần (price_desc)", async () => {
+      const res = await bookService.searchBooks({ sort: "price_desc", limit: "40" });
+      const prices = res.books.map((b) => parseFloat(b.price));
+      const sorted = [...prices].sort((a, b) => b - a);
+      assert.deepStrictEqual(prices, sorted);
+    });
+  });
+
+  describe("8. Kiểm thử phân trang (Pagination)", () => {
+    test("TC-25: Tính toán phân trang chính xác (total=40, limit=6 -> totalPages=7)", async () => {
+      const res = await bookService.searchBooks({ page: "1", limit: "6" });
+      assert.strictEqual(res.page, 1);
+      assert.strictEqual(res.limit, 6);
+      assert.strictEqual(res.total, 40);
+      assert.strictEqual(res.totalPages, 7);
+      assert.strictEqual(res.books.length, 6);
+    });
+
+    test("TC-26: Trang 1 và Trang 2 không trùng bản ghi", async () => {
+      const p1 = await bookService.searchBooks({ page: "1", limit: "6" });
+      const p2 = await bookService.searchBooks({ page: "2", limit: "6" });
+      const p1Ids = new Set(p1.books.map((b) => b.book_id));
+      assert.ok(p2.books.every((b) => !p1Ids.has(b.book_id)));
+    });
+
+    test("TC-27: Vượt quá tổng số trang trả về mảng rỗng []", async () => {
+      const res = await bookService.searchBooks({ page: "999", limit: "6" });
+      assert.strictEqual(res.books.length, 0);
+    });
+  });
+
+  describe("9. Kiểm thử bảo mật (SQL Injection)", () => {
+    test("TC-28: SQLi Tautology (' OR '1'='1)", async () => {
+      const res = await bookService.searchBooks({ q: "' OR '1'='1" });
+      assert.strictEqual(res.total, 0);
+    });
+
+    test("TC-29: SQLi Stacked Queries ('; DROP TABLE...)", async () => {
+      const res = await bookService.searchBooks({ q: "'; DROP TABLE book; --" });
+      assert.strictEqual(res.total, 0);
+      const check = await bookService.searchBooks({});
+      assert.strictEqual(check.total, 40);
+    });
+  });
+
+  describe("10. Kiểm thử endpoints danh mục & tác giả", () => {
+    test("TC-30: getCategories trả về đủ 7 danh mục", async () => {
+      const cats = await bookService.getCategories();
+      assert.strictEqual(cats.length, 7);
+    });
+
+    test("TC-31: getAuthors trả về đủ 25 tác giả", async () => {
       const authors = await bookService.getAuthors();
-      assert.ok(Array.isArray(authors));
-      assert.ok(authors.length >= 5);
-      assert.ok(authors[0].author_id);
-      assert.ok(authors[0].author_name);
+      assert.strictEqual(authors.length, 25);
     });
   });
 });

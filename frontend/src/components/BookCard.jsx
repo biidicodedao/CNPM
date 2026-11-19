@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 
 export default function BookCard({ book }) {
+  const [imageError, setImageError] = useState(false);
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -8,13 +10,25 @@ export default function BookCard({ book }) {
     }).format(price);
   };
 
+  const hasImage = Boolean(book.image_url) && !imageError;
+
   return (
     <div className="book-card">
       <div className="book-card-image-wrap">
-        <div className="book-placeholder-cover">
-          <span className="book-icon">📖</span>
-          <span className="book-cover-title">{book.book_name}</span>
-        </div>
+        {hasImage ? (
+          <img
+            src={book.image_url}
+            alt={book.book_name}
+            className="book-cover-image"
+            onError={() => setImageError(true)}
+            loading="lazy"
+          />
+        ) : (
+          <div className="book-placeholder-cover">
+            <span className="book-icon">📖</span>
+            <span className="book-cover-title">{book.book_name}</span>
+          </div>
+        )}
       </div>
       <div className="book-card-body">
         <span className="book-category-tag">{book.category_name}</span>
