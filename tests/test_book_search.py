@@ -1,6 +1,7 @@
 """
 BỘ KỊCH BẢN KIỂM THỬ TỰ ĐỘNG TOÀN DIỆN BẰNG PYTHON UNITTEST (66 TEST CASES)
 ĐỒ ÁN MÔN CÔNG NGHỆ PHẦN MỀM: MODULE TÌM KIẾM SÁCH
+MÃ NHÓM & ĐỀ TÀI: 02_BS5_SearchBook (Nhóm 02 - Lớp 24CNTT1-2627)
 Công cụ sử dụng: Python Standard Library `unittest`
 Chạy kiểm thử: python -m unittest tests/test_book_search.py -v
 """

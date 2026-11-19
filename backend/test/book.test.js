@@ -6,7 +6,7 @@ require("dotenv").config({ path: path.join(__dirname, "../.env") });
 const pool = require("../src/config/db");
 const bookService = require("../src/services/book.service");
 
-describe("UNIT TEST SUITE: EXPANDED BOOK SEARCH MODULE", () => {
+describe("02_BS5_SearchBook - UNIT TEST SUITE: BOOK SEARCH MODULE", () => {
   before(async () => {
     await pool.query("CREATE EXTENSION IF NOT EXISTS unaccent;");
   });

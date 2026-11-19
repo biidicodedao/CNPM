@@ -1,6 +1,21 @@
 # BÁO CÁO ĐỒ ÁN MÔN CÔNG NGHỆ PHẦN MỀM
 
 ## ĐỀ TÀI: MODULE TÌM KIẾM SÁCH TRONG HỆ THỐNG CỬA HÀNG BÁN SÁCH TRỰC TUYẾN
+### MÃ NHÓM & ĐỀ TÀI: 02_BS5_SearchBook
+**Lớp học phần:** 24cntt1-2627 | **Giảng viên hướng dẫn:** ThS. Vũ Thị Trà  
+**Tên file nộp bài chuẩn quy ước:** `02_BS5_SearchBook_requirement & design.docx`
+
+---
+
+### DANH SÁCH THÀNH VIÊN NHÓM 02 & TỶ LỆ ĐÓNG GÓP
+
+| STT | Họ và tên | MSSV | Vai trò | Nhiệm vụ phụ trách chính | % Đóng góp |
+| :---: | :--- | :---: | :--- | :--- | :---: |
+| **1** | **Đinh Trịnh Ngọc Hưng** | 102210001 | Trưởng nhóm / Backend Lead | Quản lý chung dự án, kiến trúc phân tầng Backend (Repo - Service - Controller - Route), thuật toán tìm kiếm, chống SQL Injection. | **100%** |
+| **2** | **Nguyễn Thị Kiều Trang** | 102210002 | Database Designer / Dev | Phân tích CSDL 3NF, cấu hình extension unaccent, viết DB scripts & seed data (40 sách, 25 tác giả, 7 thể loại). | **100%** |
+| **3** | **Lê Minh Quân** | 102210003 | Frontend Lead Developer | Cấu trúc ứng dụng React 18, thiết kế giao diện UI, component SearchBar, BookList, BookCard, Pagination. | **100%** |
+| **4** | **Nguyễn Phạm Tiến Dũng** | 102210004 | Frontend & API Integration | Component FilterBar (lọc thể loại, tác giả, giá, sắp xếp), kết nối API Express (bookApi.js), tối ưu UX. | **100%** |
+| **5** | **Nguyễn Trần Thu Thắm** | 102210005 | Business Analyst & QA | Đặc tả User Stories & Acceptance Criteria Gherkin, thiết kế bộ 66 Test Cases, thực thi kiểm thử và biên soạn tài liệu. | **100%** |
 
 ---
 

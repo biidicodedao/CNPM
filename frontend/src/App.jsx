@@ -11,7 +11,7 @@ export default function App() {
             <span className="logo-icon">📖</span>
             <span className="logo-text">BOOKSTORE SEARCH</span>
           </div>
-          <div className="navbar-badge">Module Tìm Kiếm Sách</div>
+          <div className="navbar-badge">02_BS5_SearchBook</div>
         </div>
       </nav>
 
@@ -21,8 +21,7 @@ export default function App() {
 
       <footer className="footer">
         <p>
-          © 2026 - Đồ án Công nghệ phần mềm: Module Tìm kiếm sách trong Cửa hàng
-          bán sách
+          © 2026 Nhóm 02 - Đồ án Công nghệ phần mềm: Module Tìm kiếm sách (02_BS5_SearchBook)
         </p>
       </footer>
     </div>
