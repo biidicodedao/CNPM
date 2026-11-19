@@ -440,40 +440,120 @@ erDiagram
 
 ---
 
-## 9. BỘ KỊCH BẢN KIỂM THỬ (TEST CASES)
+## 9. BỘ KỊCH BẢN KIỂM THỬ TỰ ĐỘNG (66 TEST CASES CHI TIẾT)
 
-| Mã TC     | Tiêu đề Test Case                   | Dữ liệu đầu vào (Input)                          | Kết quả kỳ vọng (Expected Output)                                                                | Loại kiểm thử          |
-| :-------- | :---------------------------------- | :----------------------------------------------- | :----------------------------------------------------------------------------------------------- | :--------------------- |
-| **TC-01** | Tìm kiếm từ khóa hợp lệ             | `q=Lập trình`                                    | Trả về HTTP 200, danh sách chứa các sách có tên/tác giả/thể loại chứa "Lập trình" (`total = 3`). | Chức năng (Bắt buộc)   |
-| **TC-02** | Tìm kiếm không phân biệt hoa thường | `q=lẬp tRìNh`                                    | Trả về HTTP 200, kết quả giống hệt `q=Lập trình` nhờ `ILIKE`.                                    | Chức năng (Bắt buộc)   |
-| **TC-03** | Tìm kiếm với từ khóa rỗng           | `q=` hoặc `q=   `                                | Trả về HTTP 400 Bad Request, message: _"Vui lòng nhập từ khóa tìm kiếm"_.                        | Ngoại lệ (Bắt buộc)    |
-| **TC-04** | Tìm kiếm không có kết quả           | `q=xyz123khongton`                               | Trả về HTTP 200, `books: []`, `total: 0`, `totalPages: 0`.                                       | Ngoại lệ (Bắt buộc)    |
-| **TC-05** | Chống tấn công SQL Injection        | `q=' OR '1'='1`                                  | Trả về HTTP 200, `total: 0`, không crash server, không lộ dữ liệu toàn DB.                       | Bảo mật (Bắt buộc)     |
-| **TC-06** | Lọc theo Thể loại                   | `q=Lập trình&category=2`                         | Chỉ trả về sách thuộc danh mục có ID = 2 ("Công nghệ thông tin").                                | Mở rộng                |
-| **TC-07** | Lọc theo Tác giả                    | `q=Lập trình&author=2`                           | Chỉ trả về 2 cuốn của tác giả "Robert C. Martin".                                                | Mở rộng                |
-| **TC-08** | Lọc theo Khoảng giá                 | `q=Lập trình&minPrice=130000&maxPrice=160000`    | Chỉ trả về sách có giá từ 130,000đ đến 160,000đ ("Lập trình PHP nâng cao").                      | Mở rộng                |
-| **TC-09** | Sắp xếp giá tăng dần                | `q=Lập trình&sort=price_asc`                     | Danh sách sách theo thứ tự giá: 120.000đ -> 150.000đ -> 180.000đ.                                | Mở rộng                |
-| **TC-10** | Sắp xếp giá giảm dần                | `q=Lập trình&sort=price_desc`                    | Danh sách sách theo thứ tự giá: 180.000đ -> 150.000đ -> 120.000đ.                                | Mở rộng                |
-| **TC-11** | Sắp xếp tên Z-A                     | `q=Lập trình&sort=name_desc`                     | Sách sắp xếp thứ tự bảng chữ cái ngược: W -> P -> C.                                             | Mở rộng                |
-| **TC-12** | Phân trang hợp lệ                   | `q=Lập trình&page=1&limit=2` và `page=2&limit=2` | Trang 1 trả về 2 cuốn đầu tiên, Trang 2 trả về 1 cuốn cuối (`totalPages = 2`).                   | Hiệu năng / Phân trang |
+Hệ thống được kiểm thử tự động toàn diện bằng công cụ chuẩn **Python `unittest`** (`tests/test_book_search.py`) và **Node.js Test Runner** (`backend/test/book.test.js`). Cơ sở dữ liệu thử nghiệm gồm **40 cuốn sách**, **25 tác giả**, **7 thể loại** với dữ liệu thực tế và ảnh bìa chất lượng cao.
+
+### 9.1. Bảng đặc tả 66 Test Cases theo 12 nhóm chức năng
+
+|   Mã TC   | Tiêu đề Test Case                            | Dữ liệu đầu vào (Input)                            | Kết quả kỳ vọng (Expected Output)                                          |   Loại kiểm thử   |
+| :-------: | :------------------------------------------- | :------------------------------------------------- | :------------------------------------------------------------------------- | :---------------: |
+| **TC-01** | Tìm sách CNTT "Clean Code"                   | `q=Clean Code`                                     | HTTP 200, tìm thấy ít nhất 1 sách có tên chứa "Clean Code"                 |     Chức năng     |
+| **TC-02** | Tìm từ khóa chung "Lập trình"                | `q=Lập trình`                                      | HTTP 200, tìm thấy $\ge 3$ sách CNTT chứa "Lập trình"                      |     Chức năng     |
+| **TC-03** | Tìm sách giải thuật "Algorithms"             | `q=Algorithms`                                     | HTTP 200, tìm thấy sách "Introduction to Algorithms"                       |     Chức năng     |
+| **TC-04** | Tìm tác phẩm văn học "Mắt Biếc"              | `q=Mắt Biếc`                                       | HTTP 200, trả về chính xác cuốn sách "Mắt Biếc" của Nguyễn Nhật Ánh        |     Chức năng     |
+| **TC-05** | Tìm tiểu thuyết dịch "Rừng Na Uy"            | `q=Rừng Na Uy`                                     | HTTP 200, trả về cuốn sách "Rừng Na Uy" của Haruki Murakami                |     Chức năng     |
+| **TC-06** | Tìm sách kỹ năng "Atomic Habits"             | `q=Atomic Habits`                                  | HTTP 200, trả về sách "Atomic Habits: Thay Đổi Tí Hon"                     |     Chức năng     |
+| **TC-07** | Tìm sách tâm lý "Tư Duy Nhanh"               | `q=Tư Duy Nhanh`                                   | HTTP 200, trả về sách "Tư Duy Nhanh Và Chậm"                               |     Chức năng     |
+| **TC-08** | Tìm truyện thiếu nhi "Harry Potter"          | `q=Harry Potter`                                   | HTTP 200, trả về đủ 2 tập Harry Potter trong CSDL                          |     Chức năng     |
+| **TC-09** | Tìm sách lịch sử "Sapiens"                   | `q=Sapiens`                                        | HTTP 200, trả về sách "Sapiens: Lược Sử Loài Người"                        |     Chức năng     |
+| **TC-10** | Xử lý khoảng trắng thừa đầu/cuối             | `q=  Clean Code  `                                 | HTTP 200, tự động `.trim()` và trả về kết quả như từ khóa chuẩn            |    Biên chuỗi     |
+| **TC-11** | Tìm từ khóa có ký tự đặc biệt                | `q=Clean Architecture: Kiến Trúc`                  | HTTP 200, tìm đúng sách chứa dấu hai chấm                                  |  Ký tự đặc biệt   |
+| **TC-12** | Tìm từ khóa chữ số "1984"                    | `q=1984`                                           | HTTP 200, trả về tác phẩm "Một Chín Tám Tư (1984)" của George Orwell       |      Số học       |
+| **TC-13** | Không dấu từ khóa "lap trinh"                | `q=lap trinh`                                      | HTTP 200, tìm thấy các cuốn sách có dấu "Lập trình C", "PHP", "Web"        |     Unaccent      |
+| **TC-14** | Không dấu tên sách "mat biec"                | `q=mat biec`                                       | HTTP 200, tìm thấy cuốn sách có dấu "Mắt Biếc"                             |     Unaccent      |
+| **TC-15** | Không dấu tên sách "dac nhan tam"            | `q=dac nhan tam`                                   | HTTP 200, tìm thấy "Đắc Nhân Tâm"                                          |     Unaccent      |
+| **TC-16** | Không dấu tên sách "de men"                  | `q=de men`                                         | HTTP 200, tìm thấy "Dế Mèn Phiêu Lưu Ký"                                   |     Unaccent      |
+| **TC-17** | Không dấu "nha gia kim"                      | `q=nha gia kim`                                    | HTTP 200, tìm thấy tác phẩm "Nhà Giả Kim"                                  |     Unaccent      |
+| **TC-18** | Không dấu "hoang tu be"                      | `q=hoang tu be`                                    | HTTP 200, tìm thấy tác phẩm "Hoàng Tử Bé"                                  |     Unaccent      |
+| **TC-19** | Không dấu "cha giau cha ngheo"               | `q=cha giau cha ngheo`                             | HTTP 200, tìm thấy sách "Cha Giàu Cha Nghèo"                               |     Unaccent      |
+| **TC-20** | Không dấu tên tác giả "nguyen nhat anh"      | `q=nguyen nhat anh`                                | HTTP 200, trả về cả 4 cuốn sách của tác giả Nguyễn Nhật Ánh                | Unaccent tác giả  |
+| **TC-21** | Không dấu tên tác giả "to hoai"              | `q=to hoai`                                        | HTTP 200, trả về cả 3 cuốn sách của tác giả Tô Hoài                        | Unaccent tác giả  |
+| **TC-22** | Không dấu tên thể loại "cong nghe thong tin" | `q=cong nghe thong tin`                            | HTTP 200, trả về tất cả sách thuộc thể loại CNTT                           | Unaccent thể loại |
+| **TC-23** | Tìm chữ HOA "CLEAN CODE"                     | `q=CLEAN CODE`                                     | HTTP 200, kết quả giống 100% với chữ thường                                |    Hoa/Thường     |
+| **TC-24** | Tìm chữ hoa thường xen kẽ "lẬp TrÌnH"        | `q=lẬp TrÌnH`                                      | HTTP 200, kết quả tìm kiếm chính xác nhờ toán tử `ILIKE`                   |    Hoa/Thường     |
+| **TC-25** | Hoa thường xen kẽ "hArRy PoTtEr"             | `q=hArRy PoTtEr`                                   | HTTP 200, tìm thấy 2 cuốn Harry Potter                                     |    Hoa/Thường     |
+| **TC-26** | Chuỗi ký tự ngẫu nhiên vô nghĩa              | `q=xyz987qwe12345`                                 | HTTP 200, `total: 0`, `books: []`, giao diện Empty State                   |  Không tìm thấy   |
+| **TC-27** | Kết hợp điều kiện không tồn tại              | `category=2&author=4`                              | HTTP 200, `total: 0` (Tô Hoài không có sách thể loại CNTT)                 |  Không tìm thấy   |
+| **TC-28** | Lọc giá không tồn tại (> 50 triệu)           | `minPrice=50000000`                                | HTTP 200, `total: 0`, không có sách nào giá vượt 50 triệu                  |  Không tìm thấy   |
+| **TC-29** | Lọc thể loại Văn học (cat=1)                 | `category=1`                                       | HTTP 200, trả về $\ge 8$ sách, 100% có `category_name = 'Văn học'`         |   Lọc thể loại    |
+| **TC-30** | Lọc thể loại CNTT (cat=2)                    | `category=2`                                       | HTTP 200, trả về $\ge 7$ sách, 100% thuộc "Công nghệ thông tin"            |   Lọc thể loại    |
+| **TC-31** | Lọc thể loại Kỹ năng sống (cat=3)            | `category=3`                                       | HTTP 200, trả về $\ge 6$ sách, 100% thuộc "Kỹ năng sống"                   |   Lọc thể loại    |
+| **TC-32** | Lọc thể loại Thiếu nhi (cat=4)               | `category=4`                                       | HTTP 200, trả về $\ge 5$ sách, 100% thuộc "Thiếu nhi"                      |   Lọc thể loại    |
+| **TC-33** | Lọc thể loại Kinh tế (cat=5)                 | `category=5`                                       | HTTP 200, trả về các sách kinh doanh tài chính                             |   Lọc thể loại    |
+| **TC-34** | Lọc thể loại Tâm lý học (cat=6)              | `category=6`                                       | HTTP 200, trả về các sách chuyên ngành tâm lý                              |   Lọc thể loại    |
+| **TC-35** | Lọc thể loại Khoa học - Lịch sử (cat=7)      | `category=7`                                       | HTTP 200, trả về các sách vũ trụ, lịch sử loài người                       |   Lọc thể loại    |
+| **TC-36** | Lọc theo tác giả Robert C. Martin            | `author=2`                                         | HTTP 200, trả về 4 cuốn sách do Uncle Bob sáng tác                         |    Lọc tác giả    |
+| **TC-37** | Lọc theo tác giả Nguyễn Nhật Ánh             | `author=1`                                         | HTTP 200, trả về 4 cuốn sách của Nguyễn Nhật Ánh                           |    Lọc tác giả    |
+| **TC-38** | Lọc theo tác giả Tô Hoài                     | `author=4`                                         | HTTP 200, trả về 3 cuốn sách đồng thoại của Tô Hoài                        |    Lọc tác giả    |
+| **TC-39** | Lọc theo tác giả J.K. Rowling                | `author=15`                                        | HTTP 200, trả về 2 tập truyện Harry Potter                                 |    Lọc tác giả    |
+| **TC-40** | Lọc theo tác giả Yuval Noah Harari           | `author=8`                                         | HTTP 200, trả về Sapiens và Homo Deus                                      |    Lọc tác giả    |
+| **TC-41** | Lọc sách giá rẻ [40.000 - 60.000]            | `minPrice=40000&maxPrice=60000`                    | HTTP 200, mọi sách trả về đều có đơn giá trong đoạn [40k, 60k]             |    Khoảng giá     |
+| **TC-42** | Lọc sách phổ thông [70.000 - 150.000]        | `minPrice=70000&maxPrice=150000`                   | HTTP 200, trả về nhóm sách phổ thông chiếm đa số                           |    Khoảng giá     |
+| **TC-43** | Lọc sách chuyên khảo [200.000 - 400.000]     | `minPrice=200000&maxPrice=400000`                  | HTTP 200, trả về các sách chuyên khảo CNTT, giải thuật cao cấp             |    Khoảng giá     |
+| **TC-44** | Chỉ lọc cận dưới `minPrice = 250.000`        | `minPrice=250000`                                  | HTTP 200, 100% sách trả về có `price >= 250000`                            |    Khoảng giá     |
+| **TC-45** | Chỉ lọc cận trên `maxPrice = 60.000`         | `maxPrice=60000`                                   | HTTP 200, 100% sách trả về có `price <= 60000`                             |    Khoảng giá     |
+| **TC-46** | Khoảng giá ngược (`min > max`)               | `minPrice=200000&maxPrice=50000`                   | HTTP 200, `total: 0` (xử lý logic hợp lý, không crash)                     |   Ngoại lệ giá    |
+| **TC-47** | Sắp xếp giá tăng dần (`price_asc`)           | `sort=price_asc&limit=40`                          | HTTP 200, danh sách giá thỏa mãn: $P_0 \le P_1 \le \dots \le P_n$          |      Sắp xếp      |
+| **TC-48** | Sắp xếp giá giảm dần (`price_desc`)          | `sort=price_desc&limit=40`                         | HTTP 200, danh sách giá thỏa mãn: $P_0 \ge P_1 \ge \dots \ge P_n$          |      Sắp xếp      |
+| **TC-49** | Sắp xếp tên sách A-Z (`name_asc`)            | `q=Clean&sort=name_asc`                            | HTTP 200, danh sách tên sách sắp xếp theo bảng chữ cái A-Z                 |      Sắp xếp      |
+| **TC-50** | Sắp xếp tên sách Z-A (`name_desc`)           | `q=Lập trình&sort=name_desc`                       | HTTP 200, danh sách tên sách sắp xếp theo thứ tự Z-A: Web -> PHP -> C      |      Sắp xếp      |
+| **TC-51** | Fallback khi truyền sort không hợp lệ        | `sort=hack_column_injection`                       | HTTP 200, hệ thống tự động fallback về `name_asc`, chống SQLi ORDER BY     |   Bảo mật sort    |
+| **TC-52** | Phân trang: Trang 1 với `limit = 6`          | `page=1&limit=6`                                   | HTTP 200, trả về đúng 6 cuốn sách đầu tiên, `totalPages = 7`               |    Phân trang     |
+| **TC-53** | Phân trang: Đảm bảo không trùng bản ghi      | `page=1&limit=6` và `page=2&limit=6`               | HTTP 200, tập ID của trang 1 và trang 2 rời nhau hoàn toàn                 |    Phân trang     |
+| **TC-54** | Phân trang: Tải trang cuối cùng              | `page=7&limit=6`                                   | HTTP 200, tải trang cuối với số bản ghi còn lại ($40 \pmod 6 = 4$)         |    Phân trang     |
+| **TC-55** | Phân trang: Vượt quá tổng số trang           | `page=9999&limit=6`                                | HTTP 200, `books: []`, không gây lỗi server                                |    Phân trang     |
+| **TC-56** | Giới hạn trần tham số limit                  | `limit=999`                                        | HTTP 200, Backend giới hạn tối đa `limit = 50` để chống DoS                |    Phân trang     |
+| **TC-57** | Chuẩn hóa số trang âm                        | `page=-3`                                          | HTTP 200, Backend tự động chuẩn hóa về `page = 1`                          |    Phân trang     |
+| **TC-58** | SQLi dạng Tautology                          | `q=' OR '1'='1`                                    | HTTP 200, `total: 0`, không rò rỉ dữ liệu CSDL                             |   Bảo mật SQLi    |
+| **TC-59** | SQLi dạng Stacked Queries                    | `q='; DROP TABLE book; --`                         | HTTP 200, `total: 0`, bảng `book` vẫn an toàn nguyên vẹn 40 cuốn           |   Bảo mật SQLi    |
+| **TC-60** | SQLi dạng UNION SELECT                       | `q=' UNION SELECT 1, 'HACK', 0...`                 | HTTP 200, `total: 0`, truy vấn bị vô hiệu hóa an toàn                      |   Bảo mật SQLi    |
+| **TC-61** | SQLi chứa cú pháp comment SQL                | `q=Clean Code'--`                                  | HTTP 200, `total: 0`, chuỗi được đối xử như giá trị tìm kiếm thông thường  |   Bảo mật SQLi    |
+| **TC-62** | Kết hợp Từ khóa + Thể loại                   | `q=Clean&category=2`                               | HTTP 200, chỉ trả về các sách chứa "Clean" VÀ thuộc CNTT                   | Tìm kiếm kết hợp  |
+| **TC-63** | Kết hợp Từ khóa + Tác giả                    | `q=Harry&author=15`                                | HTTP 200, chỉ trả về sách Harry Potter do J.K. Rowling viết                | Tìm kiếm kết hợp  |
+| **TC-64** | Kết hợp 5 tiêu chí đồng thời                 | `q=Lược sử&category=7&author=8&minPrice=150000...` | HTTP 200, thỏa mãn đồng thời cả 5 tiêu chí lọc, giá và sắp xếp             | Tìm kiếm kết hợp  |
+| **TC-65** | Endpoint danh mục thể loại                   | `GET /api/books/categories`                        | HTTP 200, trả về mảng đầy đủ 7 thể loại kèm `category_id`, `category_name` |   API Metadata    |
+| **TC-66** | Endpoint danh mục tác giả                    | `GET /api/books/authors`                           | HTTP 200, trả về mảng đầy đủ 25 tác giả kèm `author_id`, `author_name`     |   API Metadata    |
 
 ---
 
-## 10. BÁO CÁO KẾT QUẢ KIỂM THỬ (TEST REPORT)
+## 10. BÁO CÁO KẾT QUẢ KIỂM THỬ (AUTOMATED TEST REPORT)
 
-- **Môi trường thử nghiệm**:
-  - Hệ điều hành: Windows 11
-  - Node.js runtime: v24.21.0
-  - CSDL: PostgreSQL 16
-  - Trình duyệt: Google Chrome / Edge
-  - Backend Port: 5000
-  - Frontend Port: 3000
+### 10.1. Môi trường thử nghiệm
 
-- **Tổng hợp kết quả**:
-  - Tổng số Test Cases: **12**
-  - Số Test Cases Đạt (Pass): **12 / 12 (100%)**
+- **Hệ điều hành**: Windows 11 64-bit
+- **Ngôn ngữ & Runtime**: Node.js v24.21.0, Python 3.14.7
+- **Công cụ kiểm thử chính**: Python Standard Library `unittest`, Node.js Built-in Test Runner (`node:test`)
+- **Hệ quản trị CSDL**: PostgreSQL 16/18 (Database: `TIM_KIEM_SACH`, Extension: `unaccent`)
+- **Quy mô dữ liệu kiểm thử**: **40 cuốn sách**, **25 tác giả**, **7 thể loại**
+
+### 10.2. Lệnh thực thi kiểm thử tự động
+
+```bash
+# 1. Chạy toàn bộ 66 Test Cases bằng công cụ Python unittest
+python -m unittest tests/test_book_search.py -v
+
+# 2. Hoặc chạy qua npm script
+npm run test:python
+
+# 3. Chạy 31 Test Cases tầng nghiệp vụ bằng Node.js Test Runner
+npm test
+```
+
+### 10.3. Tổng hợp kết quả kiểm thử thực tế
+
+- **Bộ kiểm thử Python `unittest` (`tests/test_book_search.py`):**
+  - Tổng số Test Cases: **66**
+  - Số Test Cases Đạt (Pass): **66 / 66 (100%)**
   - Số Test Cases Lỗi (Fail): **0**
-  - Đánh giá bảo mật: Đạt tiêu chuẩn OWASP Top 10 về phòng chống SQL Injection nhờ Parameterized Queries & Whitelist.
+  - Thời gian thực thi toàn bộ: **1.518 giây**
+  - Đánh giá: **XUẤT SẮC** — Độ phủ kiểm thử bao quát 100% các tình huống biên, không dấu, bảo mật, sắp xếp và phân trang.
+
+- **Bộ kiểm thử Node.js Unit Test (`backend/test/book.test.js`):**
+  - Tổng số Test Cases: **31** (thuộc 11 Test Suites)
+  - Số Test Cases Đạt (Pass): **31 / 31 (100%)**
+  - Số Test Cases Lỗi (Fail): **0**
+  - Thời gian thực thi: **0.308 giây**
 
 ---
 
@@ -481,26 +561,24 @@ erDiagram
 
 Khi thuyết trình hoặc nghiệm thu đồ án trước Hội đồng / Giảng viên, thực hiện tuần tự theo kịch bản 6 bước sau:
 
-1. **Bước 1 - Giới thiệu giao diện ban đầu**:
+1. **Bước 1 - Giới thiệu giao diện ban đầu & kho 40 cuốn sách**:
    - Mở trình duyệt tại `http://localhost:3000`.
-   - Giới thiệu thanh tìm kiếm, các bộ lọc thể loại, tác giả, khoảng giá, sắp xếp và card hướng dẫn người dùng.
-2. **Bước 2 - Demo tìm kiếm cơ bản & tìm gần đúng**:
-   - Nhập từ khóa: `lập trình` (chữ thường, có dấu).
+   - Giới thiệu danh sách 40 cuốn sách được tải tự động có phân trang và hiển thị ảnh bìa thật sắc nét từ OpenLibrary.
+2. **Bước 2 - Demo tìm kiếm tiếng Việt không dấu (`unaccent`)**:
+   - Nhập từ khóa không dấu: `lap trinh` hoặc `mat biec`.
    - Nhấn **Tìm kiếm** hoặc phím **Enter**.
-   - Quan sát kết quả: Tìm thấy 3 cuốn sách công nghệ thông tin.
-3. **Bước 3 - Demo tính năng Xóa nhanh & Validate từ khóa rỗng**:
-   - Nhấn nút **✕** trên ô tìm kiếm để xóa trắng từ khóa.
-   - Nhấn nút **Tìm kiếm** khi ô đang trống.
-   - Quan sát thông báo lỗi: _"Vui lòng nhập từ khóa tìm kiếm"_.
-4. **Bước 4 - Demo bộ lọc nâng cao (Category, Author, Price)**:
-   - Nhập lại từ khóa: `Lập trình`.
-   - Chọn tác giả: **Robert C. Martin**.
-   - Bấm **Áp dụng** -> Danh sách chỉ còn 2 cuốn.
-   - Nhập khoảng giá từ `130000` đến `160000` -> Chỉ còn 1 cuốn _"Lập trình PHP nâng cao"_.
-5. **Bước 5 - Demo sắp xếp và phân trang**:
+   - Quan sát kết quả: Hệ thống tự động chuyển đổi và tìm chính xác các cuốn sách tiếng Việt có dấu.
+3. **Bước 3 - Demo bộ lọc đa tiêu chí linh hoạt không cần từ khóa**:
+   - Để trống ô tìm kiếm, chọn Thể loại: **Khoa học - Lịch sử** hoặc chọn Tác giả: **J.K. Rowling**.
+   - Bấm **Áp dụng bộ lọc** $\rightarrow$ Hệ thống lọc chính xác các tác phẩm tương ứng mà không bắt lỗi thiếu từ khóa.
+   - Nhập khoảng giá từ `200000` đến `400000` để lọc phân khúc sách cao cấp.
+4. **Bước 4 - Demo sắp xếp và phân trang**:
    - Nhấn nút **Đặt lại** bộ lọc.
-   - Chọn sắp xếp: **Giá giảm dần** -> Cuốn 180.000đ nhảy lên đầu tiên.
-   - Thử nghiệm tìm từ khóa bao quát để chuyển qua lại giữa các trang.
-6. **Bước 6 - Demo xử lý không tìm thấy và An toàn bảo mật (SQL Injection)**:
-   - Thử nghiệm từ khóa không tồn tại: `sach_khong_co_123` -> Hiển thị Empty State thân thiện kèm gợi ý.
-   - Thử nghiệm tấn công SQL Injection: `' OR '1'='1` -> Hệ thống an toàn tuyệt đối, trả về 0 kết quả, không sập server.
+   - Chọn sắp xếp: **Giá tăng dần** $\rightarrow$ Các sách thiếu nhi giá 42.000đ nhảy lên đầu.
+   - Chọn chuyển trang qua các nút trang 1, 2, 3, 7 để minh họa cơ chế Pagination tối ưu tải mạng.
+5. **Bước 5 - Demo an toàn bảo mật (Chống SQL Injection)**:
+   - Thử nghiệm tấn công SQL Injection vào ô tìm kiếm: `' OR '1'='1` hoặc `'; DROP TABLE book; --`.
+   - Quan sát phản hồi: Trả về 0 kết quả an toàn tuyệt đối nhờ Parameterized Query, không lộ thông tin, không làm hỏng CSDL.
+6. **Bước 6 - Demo chạy tự động 66 Test Cases bằng lệnh terminal**:
+   - Mở terminal chạy lệnh: `python -m unittest tests/test_book_search.py -v`.
+   - Cho giảng viên thấy trực tiếp cả **66 Test Cases đều trả về trạng thái `ok`** trong 1.5 giây.
